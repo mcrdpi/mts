@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FY26 Master Recruit Training Schedule Matrix - Live Tracker</title>
+<style>
+  :root{
+    --tan:#c4bc96; --tan-dk:#948a54; --grey:#d9d9d9; --grey-mid:#a6a6a6;
+    --green-pale:#eaf1dd; --yel:#ffff00; --grn:#00ff00; --teal:#008b8b;
+    --cyan:#00ffff; --blue:#0000ff; --olive:#808000; --red:#e00000;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:14px 8px;background:#f4f4f0;color:#000;
+       font-family:"Times New Roman",Times,serif;}
+  @media (min-width:901px){ body{padding:10px 6px;} }
+  .wrap{max-width:1680px;margin:0 auto;}
+
+  .mast{display:flex;align-items:baseline;justify-content:space-between;
+        gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+  .mast h1{font-size:19px;font-weight:700;margin:0;}
+  .mast .ver{font-size:17px;font-weight:700;}
+  .today{font-family:Arial,Helvetica,sans-serif;font-size:11px;
+         background:#000;color:#fff;padding:3px 9px;border-radius:2px;}
+
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+       margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:11px;}
+  .bar label{font-weight:700;}
+  select,button,input[type=date]{font-family:Arial,Helvetica,sans-serif;
+     font-size:11px;padding:4px 7px;border:1px solid #948a54;background:#fff;
+     border-radius:2px;}
+  button{cursor:pointer;}
+  .seg{display:flex;border:1px solid #948a54;border-radius:2px;overflow:hidden;}
+  .seg button{border:0;border-right:1px solid #948a54;border-radius:0;
+     padding:4px 12px;font-weight:700;}
+  .seg button:last-child{border-right:0;}
+  .seg button.on{background:var(--tan-dk);color:#fff;}
+  button.tg.on{background:var(--tan-dk);color:#fff;border-color:#000;}
+
+  /* ---- 2-col shell ---- */
+  .shell{display:grid;grid-template-columns:184px 1fr;gap:10px;align-items:start;}
+
+  /* ---- left status rail ---- */
+  .rail{border:2px solid #000;background:#fff;
+        font-family:Arial,Helvetica,sans-serif;position:sticky;top:8px;}
+  .rail h2{margin:0;background:#000;color:#fff;font-size:10px;padding:4px 7px;
+     letter-spacing:.5px;}
+  .rl{display:flex;gap:6px;align-items:flex-start;padding:5px 7px;
+      border-bottom:1px solid #ddd;cursor:pointer;}
+  .rl:hover{background:#f6f2e2;}
+  .rl.me{background:#fff4c2;}
+  .rl .dot{flex:0 0 auto;width:17px;height:17px;line-height:17px;border-radius:9px;
+     background:var(--tan-dk);color:#fff;font-size:9px;font-weight:700;
+     text-align:center;border:1px solid #000;}
+  .rl.me .dot{background:#c00;box-shadow:0 0 0 1.5px #ff0;}
+  .rl .info{min-width:0;line-height:1.3;}
+  .rl .nm{font-size:11px;font-weight:700;}
+  .rl .td{font-size:10px;}
+  .rl .td b{font-size:11px;}
+  .rl .ph{font-size:8.5px;color:#555;font-style:italic;
+     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rl .g{font-size:8.5px;color:#666;}
+
+  /* ---- matrix ---- */
+  table.matrix{border-collapse:collapse;width:100%;table-layout:fixed;
+        border:2.5px solid #000;background:#fff;}
+  col.wkc{width:1.8%;}
+  th.hd{background:#fff;border:1px solid #000;font-size:12px;
+        font-weight:700;padding:2px;text-align:center;}
+  td.wk{background:#fff;border:1px solid #000;text-align:center;
+        font-weight:700;font-size:12px;vertical-align:middle;padding:0 1px;}
+  td.cell{border:1px solid #000;vertical-align:top;padding:2px 4px 7px;
+          background:#fff;font-size:9.3px;line-height:1.24;position:relative;
+          height:98px;}
+  td.cell[data-i]{cursor:pointer;}
+  td.cell[data-i]:hover{outline:1.5px solid #1a73e8;outline-offset:-1.5px;}
+  td.cell.form{background:var(--green-pale);}
+  td.cell.nb{border-bottom-style:hidden !important;}
+  td.cell.blank{background:#fff;}
+
+  /* scope = hide, not dim */
+  tr.hide, td.cell.hide, .mcard.hide, .mrow.hide{display:none;}
+  td.cell.inwin{background:#fffdf2;}
+  td.cell.form.inwin{background:#e4eed6;}
+  td.cell.bg2{background:#f7f8ec;}   /* light olive, wks 5-8  */
+  td.cell.bg3{background:#eef0d9;}   /* darker olive, M-days  */
+  td.cell.here{outline:3px solid #c00;outline-offset:-3px;background:#fff8dc;}
+
+  .did{float:right;font-weight:700;font-size:10px;margin-left:3px;}
+  .dat{float:right;clear:right;font-weight:400;font-size:7px;color:#777;
+       font-family:Arial,sans-serif;margin-left:3px;}
+  .tag{display:inline-block;font-weight:700;font-size:8px;padding:0 2px;
+       margin-bottom:1px;}
+  .ev{display:block;}
+  /* desktop grid only: event text + its time chip share one line, so the
+     time sits immediately after the wording instead of wrapping below it */
+  .evln{display:block;}
+  .evln .ev{display:inline;}
+  .ev.hl{display:inline-block;padding:0 2px;font-weight:700;}
+  .hl-Y{background:var(--yel);} .hl-G{background:var(--grn);}
+  .hl-T{background:var(--teal);color:#fff;} .hl-C{background:var(--cyan);}
+  .hl-B{background:var(--blue);color:#fff;} .hl-O{background:var(--olive);color:#fff;}
+  .hl-R{background:var(--red);color:#fff;}
+  .hl-S{background:#d3d3d3;}
+
+  .band td.bt{background:var(--grey);border:1px solid #000;text-align:center;
+           font-weight:700;font-style:italic;font-size:12.5px;padding:2px;}
+  .band td.bx{background:#fff;border:1px solid #000;
+     border-top-style:hidden !important;}
+
+  /* pucks: anchored to the bottom-right corner only, so they don't
+     shadow event text across the rest of the cell */
+  .pins{position:absolute;right:2px;bottom:2px;z-index:20;
+        max-width:calc(100% - 4px);
+        display:flex;flex-wrap:wrap-reverse;justify-content:flex-end;
+        gap:2px;pointer-events:none;}
+  .pin{font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:19px;
+       min-width:34px;height:34px;line-height:32px;text-align:center;
+       border-radius:17px;background:var(--tan-dk);color:#fff;
+       border:2px solid #000;padding:0 3px;
+       box-shadow:0 1px 4px rgba(0,0,0,.55);}
+  .pin.me{background:#c00;border-color:#000;
+          box-shadow:0 0 0 2.5px #ff0, 0 1px 5px rgba(0,0,0,.6);}
+  /* mobile + rail keep the small chips */
+  .mrow .pin, .mlist .pin{font-size:8px;min-width:12px;height:12px;
+       line-height:11px;border-radius:6px;border-width:1px;box-shadow:none;
+       padding:0 2px;}
+  .mrow .pin.me, .mlist .pin.me{box-shadow:0 0 0 1.5px #ff0;}
+
+  /* ---- DAY view ---- */
+  .day{border:2.5px solid #000;background:#fff;}
+  .day h2{margin:0;background:var(--tan-dk);color:#fff;padding:7px 12px;
+     font-family:Arial,sans-serif;font-size:14px;
+     display:flex;justify-content:space-between;align-items:baseline;}
+  .day h2 .sub{font-size:11px;font-weight:400;}
+  .daygrid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+  .dcol{padding:10px 14px;}
+  .dcol:first-child{border-right:1px solid #948a54;}
+  .dcol h3{margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;
+     letter-spacing:.5px;color:#555;border-bottom:1px solid #ddd;padding-bottom:3px;}
+  .dcol .ev{font-size:13px;line-height:1.55;}
+  .dcol .ev.hl{font-size:13px;padding:1px 4px;}
+  .dbandbox{background:var(--grey);text-align:center;font-weight:700;
+     font-style:italic;font-size:13px;padding:4px;border-top:1px solid #000;}
+  .dco{display:flex;gap:6px;align-items:center;padding:3px 0;font-family:Arial,sans-serif;}
+  .dco .dot{width:19px;height:19px;line-height:19px;border-radius:10px;
+     background:var(--tan-dk);color:#fff;font-size:10px;font-weight:700;
+     text-align:center;border:1px solid #000;}
+  .dco.me .dot{background:#c00;box-shadow:0 0 0 1.5px #ff0;}
+  .dco .t{font-size:12px;}
+  .dco .t b{font-size:13px;}
+
+  .foot{display:flex;justify-content:space-between;margin-top:8px;
+        font-family:Arial,sans-serif;font-size:9.5px;flex-wrap:wrap;gap:8px;}
+  .foot .box{border:1px solid #000;padding:3px 8px;background:#fff;}
+
+  @media (max-width:900px){
+    body{padding:8px;background:#fff;}
+    .mast h1{font-size:14px;} .mast .ver{font-size:13px;}
+    .shell{grid-template-columns:1fr;}
+    .rail{position:static;}
+    .rl{display:inline-flex;width:calc(50% - 3px);vertical-align:top;
+        border-bottom:1px solid #eee;}
+    table.matrix{display:none;}
+    #dayview{display:none !important;}
+    .mlist{display:block !important;}
+  }
+  .mlist{display:none;}
+
+  /* ===== mobile: mini grid ===== */
+  .mg{width:100%;border-collapse:collapse;table-layout:fixed;
+      border:2px solid #000;background:#fff;margin-bottom:14px;}
+  .mg th{background:#f1f3f4;border:1px solid #000;font-size:8.5px;
+     font-weight:700;padding:2px 0;font-family:Arial,sans-serif;}
+  .mg th.wkc2{width:16px;}
+  .mg td.w{background:#fff;border:1px solid #000;text-align:center;
+     font-weight:700;font-size:9px;font-family:Arial,sans-serif;}
+  .mg td.c{border:1px solid #000;vertical-align:top;position:relative;
+     height:62px;padding:1px 1px 13px;background:#fff;cursor:pointer;
+     overflow:hidden;-webkit-tap-highlight-color:rgba(26,115,232,.18);}
+  .mg td.c:active{background:#e8f0fe;}
+  .mg td.c.form{background:var(--green-pale);}
+  .mg td.c.nb{border-bottom-style:hidden !important;}
+  .mg td.c.blank{background:#fff;}
+  .mg td.c.bg2{background:#f7f8ec;}
+  .mg td.c.bg3{background:#eef0d9;}
+  .mg td.c.here{outline:2.5px solid #c00;outline-offset:-2px;background:#fff8dc;}
+  .mg .id{font-size:8px;font-weight:700;font-family:Arial,sans-serif;
+     float:right;color:#202124;line-height:1.05;margin-left:2px;}
+  .mg .dt{font-size:6.5px;color:#80868b;font-family:Arial,sans-serif;
+     float:right;clear:right;line-height:1;margin-left:2px;}
+
+  /* micro event text inside mobile grid cells */
+  .mg .mev{font-family:"Times New Roman",Times,serif;font-size:5.4px;
+     line-height:1.32;color:#202124;display:block;
+     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mg .mev.h{font-weight:700;padding:0 1px;border-radius:1px;}
+  .mg .more{font-family:Arial,sans-serif;font-size:5.4px;color:#5f6368;
+     font-style:italic;}
+  .mg .dots{position:absolute;left:0;bottom:0;right:0;z-index:6;
+     display:flex;flex-wrap:wrap;gap:1px;justify-content:center;
+     pointer-events:none;padding:1px 0;
+     background:linear-gradient(to top,rgba(255,255,255,.97) 62%,rgba(255,255,255,0));}
+  .mg .pk{font-family:Arial,sans-serif;font-weight:700;font-size:7.5px;
+     min-width:12px;height:12px;line-height:11px;text-align:center;
+     border-radius:6px;background:var(--tan-dk);color:#fff;
+     border:1px solid #000;padding:0 1px;}
+  .mg .pk.me{background:#c00;box-shadow:0 0 0 1.3px #ff0;}
+  .mg tr.bnd td.bt{background:var(--grey);border:1px solid #000;
+     text-align:center;font-weight:700;font-style:italic;font-size:8px;
+     padding:1px;}
+  .mg tr.bnd td.bx{background:#fff;border:1px solid #000;
+     border-top-style:hidden !important;}
+  .msec{font-family:Roboto,Arial,sans-serif;font-size:10px;font-weight:600;
+     color:#5f6368;letter-spacing:.8px;text-transform:uppercase;
+     margin:0 0 6px;padding-bottom:3px;border-bottom:2px solid #dadce0;}
+  /* the agenda header+list are wrapped together so the header can stay
+     pinned to the top of the viewport for the full length of the list,
+     not just its own (tiny) box */
+  .agsec{position:relative;}
+  .agmsec{position:sticky;top:0;z-index:40;background:#fff;
+     margin:0;padding:8px 0 6px;display:flex;align-items:center;
+     justify-content:space-between;border-bottom:2px solid #dadce0;
+     box-shadow:0 2px 4px rgba(0,0,0,.08);}
+
+  /* ===== tap sheet ===== */
+  .veil{position:fixed;inset:0;background:rgba(32,33,36,.55);z-index:90;
+     display:none;}
+  .veil.on{display:block;}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:95;background:#fff;
+     border-radius:14px 14px 0 0;box-shadow:0 -3px 18px rgba(0,0,0,.3);
+     transform:translateY(102%);transition:transform .2s ease;
+     max-height:76vh;display:flex;flex-direction:column;
+     font-family:Roboto,Arial,Helvetica,sans-serif;}
+  .sheet.on{transform:translateY(0);}
+  .sheet .grab{width:34px;height:4px;border-radius:2px;background:#dadce0;
+     margin:7px auto 3px;flex:0 0 auto;}
+  .sheet .sh{padding:4px 16px 9px;border-bottom:1px solid #e8eaed;flex:0 0 auto;}
+  .sheet .sh .r1{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .sheet .sh .tid{font-size:19px;font-weight:600;color:#202124;}
+  .sheet .sh .dd{font-size:13px;color:#5f6368;}
+  .sheet .sh .wl{font-size:11px;color:#80868b;}
+  .sheet .sb{padding:11px 16px 20px;overflow-y:auto;}
+  .sheet h4{margin:0 0 5px;font-size:10px;letter-spacing:.7px;color:#80868b;
+     text-transform:uppercase;font-weight:600;}
+  .sheet .bandpill{display:inline-block;background:#5f6368;color:#fff;
+     font-size:10px;font-weight:600;letter-spacing:.6px;padding:2px 9px;
+     border-radius:10px;text-transform:uppercase;margin-top:5px;}
+  .sheet .evl li{font-size:14px;padding:3px 0 3px 14px;}
+  .sheet .evl li.hl span{font-size:13.5px;}
+  .sheet .cos{margin-top:13px;}
+  .sheet .cos .dco{padding:4px 0;}
+  .sheet .x{position:absolute;right:9px;top:9px;border:0;background:#f1f3f4;
+     width:29px;height:29px;border-radius:50%;font-size:15px;color:#5f6368;
+     cursor:pointer;line-height:1;}
+
+  /* ===== desktop grid caption ===== */
+  .mxcap{display:none;font-family:Arial,Helvetica,sans-serif;font-size:11px;
+     color:#777;margin:0 0 4px;}
+  .hintB{display:none;}
+  @media (min-width:901px){ .mxcap{display:block;} }
+  @media (min-width:901px) and (max-width:1180px){
+    .hintA{display:none;} .hintB{display:inline;}
+    td.cell .mtm{display:none;}
+  }
+
+  /* ===== desktop popup: bottom-anchored, centered card, not full-width ===== */
+  .dveil{position:fixed;inset:0;background:rgba(32,33,36,.4);z-index:90;
+     display:none;}
+  .dveil.on{display:block;}
+  .dpop{position:fixed;left:50%;bottom:0;z-index:95;
+     width:min(560px,calc(100vw - 48px));
+     max-height:75vh;                 /* leaves ~25% clear above it */
+     background:#fff;border-radius:14px 14px 0 0;
+     box-shadow:0 -4px 22px rgba(0,0,0,.32);
+     transform:translate(-50%,102%);transition:transform .2s ease;
+     display:flex;flex-direction:column;overflow:hidden;
+     font-family:Roboto,Arial,Helvetica,sans-serif;}
+  .dpop.on{transform:translate(-50%,0);}
+  .dph{flex:0 0 auto;display:flex;align-items:flex-start;
+     justify-content:space-between;gap:10px;padding:14px 16px 10px;
+     border-bottom:1px solid #e8eaed;}
+  .dphl{display:flex;flex-direction:column;gap:2px;}
+  .dptitle{font-size:19px;font-weight:600;color:#202124;}
+  .dpsub{font-size:12.5px;color:#5f6368;}
+  .dphr{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+  #dpopBtns{display:flex;gap:8px;}
+  .dptop{border:1px solid #dadce0;background:#fff;color:#1a73e8;
+     font-family:Roboto,Arial,sans-serif;font-size:11.5px;font-weight:600;
+     border-radius:999px;padding:5px 12px;cursor:pointer;white-space:nowrap;}
+  .dpx{border:0;background:#f1f3f4;width:29px;height:29px;border-radius:50%;
+     font-size:16px;color:#5f6368;cursor:pointer;line-height:1;flex:0 0 auto;}
+  .dpb{overflow-y:auto;padding:6px 0 16px;}
+  .dpb .agenda{border:0;border-radius:0;}
+  .dpb .ad{padding:9px 16px 9px 12px;}
+
+  /* ===== mobile: google-calendar style agenda ===== */
+  .agenda{background:#fff;border:1px solid #dadce0;border-radius:8px;
+     overflow:hidden;font-family:Roboto,Arial,Helvetica,sans-serif;}
+  .mo{background:#fff;padding:10px 14px 4px;font-size:13px;font-weight:500;
+     color:#5f6368;letter-spacing:.6px;text-transform:uppercase;
+     border-bottom:1px solid #f1f3f4;position:sticky;top:0;z-index:5;}
+  .ad{display:flex;gap:10px;padding:9px 12px 9px 8px;
+      border-bottom:1px solid #f1f3f4;}
+  .ad:last-child{border-bottom:0;}
+  .ad.today{background:#e8f0fe;}
+  .ad.sun{background:#fafafa;}
+  .ad.today.sun{background:#e8f0fe;}
+
+  .ad .dbox{flex:0 0 42px;text-align:center;padding-top:1px;}
+  .ad .dw{font-size:10px;color:#70757a;text-transform:uppercase;
+     letter-spacing:.5px;line-height:1.2;}
+  .ad .dn{font-size:20px;color:#3c4043;line-height:1.25;font-weight:400;}
+  .ad.today .dn{background:#1a73e8;color:#fff;border-radius:50%;
+     width:30px;height:30px;line-height:30px;margin:1px auto 0;
+     font-weight:500;font-size:16px;}
+  .ad.today .dw{color:#1a73e8;font-weight:500;}
+
+  .ad .body{flex:1;min-width:0;}
+  .ad .hdr{display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+     margin-bottom:3px;}
+  .ad .tid{font-size:13px;font-weight:600;color:#202124;}
+  .ad .wkl{font-size:10px;color:#80868b;}
+
+  .chip{display:inline-flex;align-items:center;gap:4px;
+     font-size:11px;font-weight:600;color:#fff;background:#616161;
+     border-radius:11px;padding:1px 8px 1px 3px;line-height:17px;}
+  .chip i{font-style:normal;width:15px;height:15px;line-height:15px;
+     border-radius:50%;background:rgba(255,255,255,.28);
+     text-align:center;font-size:9px;font-weight:700;}
+  .chip.me{background:#d93025;}
+
+  .evl{list-style:none;margin:0;padding:0;}
+  .evl li{position:relative;padding:2px 0 2px 13px;font-size:13px;
+     color:#3c4043;line-height:1.45;font-family:Roboto,Arial,sans-serif;}
+  .evl li:before{content:"";position:absolute;left:0;top:8px;
+     width:7px;height:7px;border-radius:50%;background:#1a73e8;}
+  .evl li.hl:before{display:none;}
+  .evl li.hl{padding-left:0;}
+  .evl li.hl span{display:inline-block;padding:1px 6px;border-radius:3px;
+     font-weight:600;font-size:12.5px;}
+  .evl li.none{color:#9aa0a6;font-style:italic;}
+  .evl li.none:before{background:#dadce0;}
+  .evl .tm, .hdr .tm{float:right;font-family:Roboto,Arial,sans-serif;
+     font-size:12px;color:#1a73e8;font-weight:600;letter-spacing:.3px;
+     background:#e8f0fe;border-radius:999px;padding:0 7px;line-height:20px;
+     margin-left:6px;}
+  .aband .btm{font-family:Roboto,Arial,sans-serif;font-weight:600;
+     font-size:11px;color:#fff;letter-spacing:.3px;margin-left:6px;
+     background:rgba(255,255,255,.28);border-radius:999px;padding:0 8px;
+     line-height:18px;}
+  .msec .agx{border:1px solid #dadce0;background:#fff;
+     color:#1a73e8;font-family:Roboto,Arial,sans-serif;font-size:11px;
+     font-weight:600;border-radius:999px;padding:2px 11px;cursor:pointer;
+     text-transform:none;letter-spacing:0;flex:0 0 auto;white-space:nowrap;}
+  .msec .agbtns{display:flex;gap:6px;flex:0 0 auto;}
+  /* desktop grid: same pill design language, scaled to fit tiny cells */
+  td.cell .mtm{font-family:Roboto,Arial,sans-serif;font-weight:600;
+     font-size:6.2px;color:#1a73e8;background:#e8f0fe;border-radius:999px;
+     padding:0 3.5px;line-height:9px;margin-left:2px;white-space:nowrap;}
+  .dcol .tm{font-family:Roboto,Arial,sans-serif;font-size:12px;color:#1a73e8;
+     font-weight:600;background:#e8f0fe;border-radius:999px;padding:0 7px;
+     line-height:20px;margin-left:6px;}
+
+  .aband{background:#5f6368;color:#fff;text-align:center;font-size:11px;
+     font-weight:600;letter-spacing:.7px;padding:4px;text-transform:uppercase;
+     font-family:Roboto,Arial,sans-serif;}
+  .agap{padding:14px;text-align:center;color:#9aa0a6;font-size:12px;
+     font-family:Roboto,Arial,sans-serif;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <h1>FY26 Master Recruit Training Schedule Matrix V2</h1>
+    <span class="ver">20260205</span>
+    <span class="today" id="today"></span>
+  </div>
+
+  <div class="bar">
+    <div class="seg" id="seg">
+      <button data-v="all" class="on">All</button>
+      <button data-v="month">Month</button>
+      <button data-v="week">Week</button>
+      <button data-v="day">Day</button>
+    </div>
+    <label for="me" style="margin-left:6px;">Company:</label>
+    <select id="me"></select>
+    <button id="btnAll" class="tg on">All companies</button>
+    <label for="dt" style="margin-left:6px;">Date:</label>
+    <input type="date" id="dt">
+    <button id="btnNow">Today</button>
+  </div>
+
+  <div class="shell">
+    <aside class="rail" id="rail"></aside>
+    <main>
+      <div class="mxcap">
+        <span class="hintA">Click a day for full detail</span>
+        <span class="hintB">Times hidden at this width - click a day to view</span>
+      </div>
+      <table class="matrix" id="mx"><tbody id="mxb"></tbody></table>
+      <div id="dayview"></div>
+      <div class="mlist" id="ml"></div>
+    </main>
+  </div>
+
+  <div class="veil" id="veil"></div>
+  <div class="sheet" id="sheet">
+    <div class="grab"></div>
+    <button class="x" id="sheetX">&times;</button>
+    <div class="sh" id="sheetHead"></div>
+    <div class="sb" id="sheetBody"></div>
+  </div>
+
+  <!-- desktop-only: bottom-anchored, centered popup card. Opens on a date
+       click, defaults to a 7-day agenda starting on the clicked day. -->
+  <div class="dveil" id="dveil"></div>
+  <div class="dpop" id="dpop">
+    <div class="dph" id="dpopHead">
+      <div class="dphl">
+        <span class="dptitle" id="dpopTitle"></span>
+        <span class="dpsub" id="dpopSub"></span>
+      </div>
+      <div class="dphr">
+        <span id="dpopBtns"></span>
+        <button class="dpx" id="dpopX">&times;</button>
+      </div>
+    </div>
+    <div class="dpb" id="dpopBody"></div>
+  </div>
+
+  <div class="foot">
+    <span>DISTRIBUTION: DoD COMMUNITY ONLY</span>
+    <span class="box">Official version distributed by G-37</span>
+  </div>
+</div>
+
+<script>
+const DATA =
+{"weeks":[["1",[{"id":"F3","items":["Forming","*Inoculations|T","Intro to Force Fitness Class","Running Mechanics Class","M-16/Interior Guard"],"tag":null,"bg":"form"},{"id":"T1","items":["Academic Classes","COD"],"tag":null,"tm":{"1":"1515-1630"}},{"id":"T2","items":["Physical Training","Academic Classes","COD"],"tag":null,"tm":{"0":"0500-0600","2":"0845-1100"}},{"id":"T3","items":["Physical Training","Academic Classes","COD"],"tag":null,"tm":{"0":"0500-0600","2":"0815-1000"}},{"id":"T4","items":["PT \u2013 Active Recovery","MCMAP","Academic Classes","COD","New Marine Mentorship"],"tag":null,"tm":{"0":"0445-0515","1":"0700-1030","3":"1400-1600","4":"1730-1800"}},{"id":"T5","items":["Physical Training","Academic Classes","COD"],"tag":"H/Cuts 1|O","tm":{"0":"0500-0630","2":"1400-1545","tag":"1045-1215"}},{"id":"S1","items":["Religious Services","Spiritual Fitness II","Rope Climb Class I","CVGDs"],"tag":null,"tm":{"0":"0645-1045","1":"1330-1400","2":"1430-1500","3":"1745-1845"}}]],["2",[{"id":"T6","items":["Physical Training","Academic Classes","COD","CVGDs","*Dental|T"],"tag":null,"tm":{"0":"0500-0600","2":"1330-1615","3":"1745-1815","4":"0600-1530"}},{"id":"T7","items":["O-Course I (L)","Physical training (F)","MCMAP","PSP Testing","COD","*Dental|T"],"tag":null,"tm":{"0":"0500-0700","1":"0500-0700","2":"1330-1600","3":"0730-1030","4":"0915-1130","5":"0600-1530"}},{"id":"T8","items":["O-Course I (F)","Physical Training (L)","MCMAP","Academic Classes","COD","CVGDs","*Dental|T"],"tag":null,"tm":{"0":"0500-0700","1":"0500-0600","2":"0900-1600","4":"1400-1600","5":"1730-1815","6":"0600-1530"}},{"id":"T9","items":["Physical Training","MCMAP","Academic Classes","COD","CVGDs","*Dental|T"],"tag":null,"tm":{"0":"0500-0600","1":"0900-1030","3":"1415-1600","4":"0645-1800","5":"0600-1530"}},{"id":"T10","items":["PT - Active Recovery","MCMAP","COD","CVGDs","*Dental|T"],"tag":"H/Cuts 2|O","tm":{"0":"0445-0515","1":"1300-1400","2":"1430-1700","3":"0715-1000","4":"0600-1530","tag":"0730-0900"}},{"id":"T11","items":["6K Hike","Academic Classes","COD","CVGDs"],"tag":null,"tm":{"0":"0500-0645","2":"1315-1530","3":"1545-1645"}},{"id":"S2","items":["Religious Services","Rope Climb Class II","CVGDs"],"tag":null,"tm":{"0":"0700-1100","1":"1115-1145","2":"1315-1845"}}]],["3",[{"id":"T12","items":["Confidence Course I","MCMAP","COD","CVGDs"],"tag":null,"tm":{"0":"0630-0830","1":"0630-1200","2":"1345-1615","3":"1800-1830"}},{"id":"T13","items":["PT \u2013 Active Recovery","MCMAP","*NFCU Membership/DirDep|O","Academic Classes"],"tag":null,"tm":{"0":"0445-0515","1":"0700-1000","2":"1300-1500"}},{"id":"T14","items":["Physical Training","MCMAP","Iron Ducks Screener","COD"],"tag":null,"tm":{"0":"0500-0645","1":"0915-1345","2":"1100-1300","3":"1415-1600"}},{"id":"T15","items":["Physical Training","*MCX-1|O","MCMAP"],"tag":null,"tm":{"0":"0500-0615","1":"0845-1115","2":"1245-1645"}},{"id":"T16","items":["PT \u2013 Active Recovery","*MCMAP Qualification|Y","*TSP/BRS Brief|O","COD","Iron Duck Screener"],"tag":null,"tm":{"0":"0430-0500","1":"0645-0845","2":"1245-1445","3":"1500-1700","4":"1100-1300"}},{"id":"T17","items":["O-Course II","COD","MCMAP Retest","Academic Classes"],"tag":"H/Cuts 3|O","tm":{"0":"0500-0700","1":"0915-1145","tag":"1330-1530"}},{"id":"S3","items":["Religious Services","CVGDs"],"tag":null,"tm":{"0":"0700-1100","1":"1345-1845"}}]],["4",[{"id":"T18","items":["PT \u2013 Active Recovery","*Initial Drill|Y","*Combat Water Survival|Y"],"tag":null,"tm":{"0":"0415-0445","1":"0645-1045","2":"1230-1630"}},{"id":"T19","items":["PT \u2013 DE 2","*Individual Photos (L)|O","","Iron Ducks"],"tag":null,"tm":{"0":"0430-0500","1":"0645-1200","3":"0800-1100"}},{"id":"T20","items":["PT \u2013 Active Recovery","*Individual Photos (F)|O","MCMAP Retest","Iron Ducks"],"tag":"Name Tape Turn-in|G","tm":{"0":"0430-0500","1":"0645-1200","3":"1300-1630"}},{"id":"T21","items":["PT \u2013 Mock PFT","Academic Classes","COD","Iron Ducks"],"tag":null,"tm":{"0":"0500-0630","2":"0845-1000","3":"1300-1630"}},{"id":"T22","items":["PT \u2013 Active Recovery","*WASB+/WSI Qual|Y","Academic Classes","CVGDs","Iron Duck","*Dental|T"],"tag":null,"tm":{"0":"0415-0445","1":"0830-1030","3":"0900-1800","4":"0830-1030","5":"0600-1500"}},{"id":"T23","items":["8K Hike","Ser Co Inspection","*Museum Visit|O","COD"],"tag":null,"tm":{"0":"0500-0715","1":"0830-1130","2":"1315-1445","3":"1515-1630"}},{"id":"S4","items":["Religious Services","CVGDs"],"tag":null,"tm":{"0":"0715-1115","1":"1345-1445"}}],"MCWST"],["5",[{"id":"T24","items":["*Initial CFT (L)|Y","RSO"],"tag":"H/Cuts 4 (L)|O","bg":"bg2","tm":{"0":"0500-0700","1":"0630-1630","tag":"1300-1500"}},{"id":"T25","items":["*Initial CFT (F)|Y","*Inoculations - 2|T","RSO","*Dental|T"],"tag":"H/Cuts 4 (F)|O","bg":"bg2","tm":{"0":"0500-0700","1":"0800-1130","2":"0630-1630","tag":"1045-1215"}},{"id":"T26","items":["Physical Training (L)","*O2 Clothing (F)|G","RSO","*MCX-2 (L)|O","*Dental|T"],"tag":null,"bg":"bg2","tm":{"0":"0500-0615","1":"0630-1700","2":"0630-1630","3":"0900-1045","4":"0600-1530"}},{"id":"T27","items":["Physical Training (F)","*O2 Clothing (L)|G","RSO","*MCX-2 (F)|O","*Dental|T"],"tag":null,"bg":"bg2","tm":{"0":"0500-0615","1":"0630-1700","2":"0630-1630","3":"1145-1345","4":"0600-1530"}},{"id":"T28","items":["PT- ACTIVE Recovery","Confidence Course II","*Written Exam I|Y","COD","*Dental|T"],"tag":"Name Tape P/U|G","bg":"bg2","tm":{"0":"0430-0500","1":"0845-1045","2":"1300-1430","3":"1500-1645","4":"0600-1530"}},{"id":"T29","items":["Physical Training","Wrt Exam I Retest","Academic Classes","COD","Warfighting","CVGDs"],"tag":null,"bg":"bg2","tm":{"0":"0500-0715","1":"0915-1045","3":"0815-1045","4":"1430-1600"}},{"id":"S5","items":["Religious Services","CVGDs"],"tag":null,"bg":"bg2","tm":{"0":"0715-1115","1":"1545-1645"}}],"TEAM WEEK"],["6",[{"id":"T30","items":["*Initial PFT|Y","MCCMP Classes","Wr Exam I Retest"],"tag":null,"bg":"bg2","tm":{"0":"0500-0700","1":"0930-1645","2":"0500-0630"}},{"id":"T31","items":["MCCMP Classes","Hearing Conservation"],"tag":null,"bg":"bg2","tm":{"0":"0630-1545","1":"0630-0700"}},{"id":"T32","items":["PT - DE 3","MCCMP Classes","Spiritual Fitness III"],"tag":null,"bg":"bg2","tm":{"0":"0430-0515","1":"0700-1645"}},{"id":"T33","items":["MCCMP Classes"],"tag":"H/Cuts 5|O","bg":"bg2","tm":{"0":"0645-1400","tag":"1415-1700"}},{"id":"T34","items":["MCCMP Classes"],"tag":null,"bg":"bg2","tm":{"0":"0645-1545"}},{"id":"T35","items":["10k Hike","TCCC I","Co Cmdr Inspection","COD"],"tag":null,"bg":"bg2","tm":{"0":"0530-0830","1":"0930-1045","2":"1230-1530","3":"1530-1700"}},{"id":"S6","items":["Religious Services","TCCC Prac App 1"],"tag":null,"bg":"bg2","tm":{"0":"0730-1130","1":"1345-1445"}}],"MCCMP GRASS WEEK"],["7",[{"id":"T36","items":["PT \u2013 DE 4","Zero RCO","Table 1 Firing"],"tag":null,"bg":"bg2","tm":{"0":"0415-0445","1":"0615-1345","2":"1345-1645"}},{"id":"T37","items":["PT \u2013 DE 5","Table 1 Firing"],"tag":null,"bg":"bg2","tm":{"0":"0415-0445","1":"0615-1600"}},{"id":"T38","items":["PT \u2013 DE 6","Table 1 Firing","*Table 1 Pre-Qual|Y"],"tag":null,"bg":"bg2","tm":{"0":"0415-0445","2":"0615-1600"}},{"id":"T39","items":["*Table 1 Qualification|Y"],"tag":"O2 Delivery (F)|G","bg":"bg2","tm":{"0":"0615-1700"}},{"id":"T40","items":["PT \u2013 Active Recovery","Re-Qual","*H/Cuts 6|O"],"tag":"O2 Delivery (L)|G","bg":"bg2","tm":{"0":"0415-0445","1":"0615-1400","2":"1430-1715"}},{"id":"T41","items":["*Final CFT|Y","COD","TCCC II/III"],"tag":null,"bg":"bg2","tm":{"0":"0530-0830","1":"0915-1045","2":"1230-1600"}},{"id":"S7","items":["Religious Services","TCCC II/III PracApp"],"tag":null,"bg":"bg2","tm":{"0":"0745-1145","1":"1415-1615"}}],"MCCMP TABLE ONE"],["8",[{"id":"T42","items":["*O3 Clothing (L)|G","PT \u2013 Active Recovery (F)","Table 2 Classes (F)"],"tag":null,"bg":"bg2","tm":{"0":"0630-1645","1":"0415-0445","2":"0630-1615"}},{"id":"T43","items":["*O3 Clothing (F)|G","PT \u2013 Active Recovery (L)","Table 2 Classes (L)"],"tag":null,"bg":"bg2","tm":{"0":"0630-1645","1":"0415-0445","2":"0630-1645"}},{"id":"T44","items":["PT \u2013 DE 7 (F)","Table 2 Zeroing (L)","*MCX-3(F)|O"],"tag":"H/Cuts 7 (F)|O","bg":"bg2","tm":{"0":"0430-0500","1":"0745-1615","2":"1430-1600","tag":"1300-1430"}},{"id":"T45","items":["PT \u2013 DE 7 (L)","Table 2 Zeroing (F)","*MCX-3(L)|O"],"tag":"H/Cuts 7 (L)|O","bg":"bg2","tm":{"0":"0430-0500","1":"0745-1615","2":"1430-1600","tag":"1300-1430"}},{"id":"T46","items":["PT \u2013 DE 8","*Table 2 - Qualification|Y"],"tag":null,"bg":"bg2","tm":{"0":"1630-1700","1":"0615-1115"}},{"id":"T47","items":["PT \u2013 Active Recovery","*Final Drill|Y","TCCC IV/V"],"tag":null,"bg":"bg2","tm":{"0":"0415-0445","1":"0730-1130","2":"1315-1445"}},{"id":"S8","items":["Religious Services","TCCC IV PracApp","CVGDs"],"tag":null,"bg":"bg2","tm":{"0":"0745-1145","1":"1415-1515"}}],"MCCMP TABLE TWO"],["9",[{"id":"T48","items":["Land Navigation Classes"],"tag":null,"tm":{"0":"0615-1615"}},{"id":"T49","items":["Day Land Navigation PE","Night Land Navigation PE"],"tag":null,"tm":{"0":"0600-0700","1":"1700-2100"}},{"id":"T50","items":["Field Skills Classes"],"tag":null,"tm":{"0":"0600-1745"}},{"id":"T51","items":["Field Skills","Culminating Event"],"tag":null,"tm":{"0":"1000-1100","1":"1100-1500"}},{"id":"T52","items":["Gas Chamber","Rappel / FAST Rope","Crux Screening"],"tag":null,"tm":{"0":"1200-1215","1":"0600-0630"}},{"id":"T53","items":["Endurance Course","Academic Classes"],"tag":null,"tm":{"0":"0530-0930"}},{"id":"S9","items":["Religious Services","CVGDs"],"tag":null,"tm":{"0":"0745-1145","1":"1415-1545"}}],"BASIC WARRIOR TRAINING"],["10",[{"id":"T54","items":["PT \u2013 Active Recovery","*Written Exam II|Y","*TCCC Exam|Y"],"tag":null,"tm":{"0":"0430-0500","1":"0700-0830","2":"1230-1630"}},{"id":"T55","items":["*Final PFT|Y","Wr Exam II Retest","ANAM Testing (F)","TCCC Exam Retest","Crucible Prep Order"],"tag":"H/Cuts 8|O","tm":{"0":"0500-0700","1":"1045-1145","2":"0930-1330","4":"0930-1200","tag":"1230-1400"}},{"id":"T56","items":["PT \u2013 Active Recovery","Wr Exam II Retest","TCCC Exam Retest","ANAM Testing","*Platoon Photo|O","Spiritual Fitness IV"],"tag":null,"tm":{"0":"0415-0445","1":"1545-1645","3":"0630-0830","4":"0900-1000","5":"1045-1145"}},{"id":"T57","items":[],"tag":null,"span":"CRUCIBLE","tm":{"span":"0200-2400"}},{"id":"T58","items":[],"tag":null,"span":"CRUCIBLE","tm":{"span":"0300-2230"}},{"id":"M1","items":["15K Hike","Emblem Ceremony","Warriors Breakfast","Promotion Ceremony","EMLS Survey"],"tag":null,"bg":"bg3","tm":{"0":"0300-0645","1":"0700-0730","2":"0830-1000","3":"0945-1115","4":"1345-1400"}},{"id":"S10","items":["Religious Services","Lost Honor Video"],"tag":null,"bg":"bg3","tm":{"0":"0800-1200","1":"1545-1645"}}],null],["11",[{"id":"M2","items":["PT \u2013 Active Recovery","*Final Travel|O","Foreign Language Prog","CVGDs","*O3 Delivery|G","*Dental|T"],"tag":"H/Cuts 9|O","bg":"bg3","tm":{"0":"0430-0500","1":"1230-1600","2":"1630-1700","5":"0500-1430","tag":"0700-0900"}},{"id":"M3","items":["PT \u2013 Active Recovery","Personal Effects","782 Gear Turn-in","*NFCU Final Out brief|O","*Dental|T"],"tag":null,"bg":"bg3","tm":{"0":"0415-0445","1":"1300-1600","2":"0630-1000","3":"1030-1115","4":"0600-1530"}},{"id":"M4","items":["Physical Training","*APE Testing|S","MOS Talks","*Dental|T"],"tag":null,"bg":"bg3","tm":{"0":"0500-0615","1":"0845-1045","2":"1400-1600","3":"0630-1430"}},{"id":"M5","items":["PT \u2013 DE 9","*Foreign Language Test|S","*Final Bill Pay|O","*ANAM Testing Makeup|S","*APE Testing|S","*Dental|T"],"tag":null,"bg":"bg3","tm":{"0":"0415-0445","1":"0715-1315","2":"1215-1615","3":"0800-1130","5":"0600-1530"}},{"id":"M6","items":["*Battalion Cmdr Inspection|C","Squad Talks","*Foreign Language Test|S","New Marine Mentorship","MCMAP Sustainment","*Dental|T"],"tag":null,"bg":"bg3","tm":{"0":"0745-1045","1":"1500-1700","2":"0715-1315","3":"1730-1800","4":"1230-1430"}},{"id":"M7","items":["PT \u2013 DE 10","Field Meet","*Base Liberty|O","Academic Classes"],"tag":null,"bg":"bg3","tm":{"0":"0430-0500","1":"0645-1045","2":"1300-1630"}},{"id":"S11","items":["Religious Services","MCWP 6-10","","*Blood Drive|R"],"tag":null,"bg":"bg3","tm":{"0":"0815-1215","1":"1445-1545","3":"1400-1800"}}]],["12",[{"id":"M8","items":["PT \u2013 DE 11","Orders/SRB/ID Cards","RLS Brief","Weapons Turn-in"],"tag":null,"bg":"bg3","tm":{"0":"0415-0445","1":"0700-1100","2":"0700-1100","3":"1145-1630"}},{"id":"M9","items":["PT \u2013 Active Recovery","*MCCS Resources|O","*Bn SgtMaj Mentorship|O","*Share the Legacy|O","Fam Day/Grad Rehearsal"],"tag":null,"bg":"bg3","tm":{"0":"0415-0445","1":"0830-0930","2":"0730-0830","3":"1215-1315","4":"1330-1530"}},{"id":"M10","items":["Physical Training","*Molly Marine/Iron Mike|O","*Platoon Talks|O","*Graduation Rehearsal|O","*Evening Colors Ceremony|B"],"tag":"H/Cuts 10|O","bg":"bg3","tm":{"0":"0445-0515","1":"0845-0945","2":"1530-1700","3":"1315-1515","tag":"1015-1145"}},{"id":"M11","items":["Motivation Run","Family Day","Graduation Rehearsal","Continuing the Transition"],"tag":"O4 Delivery|G","bg":"bg3","tm":{"0":"0700-0830","1":"0930-1500","2":"1515-1645","3":"1730-1800"}},{"id":"M12","items":["GRADUATION"],"tag":null,"bg":"bg3","tm":{"0":"0615-0715"}},{"id":"OUT","items":["Outpost"],"tag":null,"bg":"bg3"},{"id":"OUT2","items":["Outpost"],"tag":null,"bg":"bg3"}]]],"forming":[null,null,null,null,null,{"id":"F1","items":["Pickup/Forming","Initial Strength Test"],"tag":null},{"id":"F2","items":["Forming","Spiritual Fitness I"],"tag":null}],"cos":[{"co":"M","name":"Mike","op":34,"ship":"2025-10-14","pickup":"2025-10-17","td1":"2025-10-21","grad":"2026-01-09","soi":"2026-01-20"},{"co":"H","name":"Hotel","op":41,"ship":"2025-10-28","pickup":"2025-10-31","td1":"2025-11-04","grad":"2026-01-23","soi":"2026-02-03"},{"co":"N","name":"November","op":34,"ship":"2025-11-04","pickup":"2025-11-07","td1":"2025-11-11","grad":"2026-01-30","soi":"2026-02-10"},{"co":"A","name":"Alpha","op":41,"ship":"2025-11-18","pickup":"2025-11-21","td1":"2025-11-25","grad":"2026-02-13","soi":"2026-02-24"},{"co":"E","name":"Echo","op":56,"ship":"2025-12-09","pickup":"2025-12-13","td1":"2025-12-16","grad":"2026-03-06","soi":"2026-03-07"},{"co":"I","name":"India","op":77,"ship":"2026-01-06","pickup":"2026-01-10","td1":"2026-01-13","grad":"2026-04-03","soi":"2026-04-14"},{"co":"B","name":"Bravo","op":76,"ship":"2026-01-13","pickup":"2026-01-16","td1":"2026-01-20","grad":"2026-04-10","soi":"2026-04-21"},{"co":"F","name":"Fox","op":83,"ship":"2026-01-27","pickup":"2026-01-30","td1":"2026-02-03","grad":"2026-04-24","soi":"2026-05-05"},{"co":"K","name":"Kilo","op":83,"ship":"2026-02-03","pickup":"2026-02-06","td1":"2026-02-10","grad":"2026-05-01","soi":"2026-05-12"},{"co":"C","name":"Charlie","op":90,"ship":"2026-02-17","pickup":"2026-02-20","td1":"2026-02-24","grad":"2026-05-15","soi":"2026-05-26"},{"co":"G","name":"Golf","op":92,"ship":"2026-02-24","pickup":"2026-02-27","td1":"2026-03-03","grad":"2026-05-22","soi":"2026-06-02"},{"co":"L","name":"Lima","op":97,"ship":"2026-03-10","pickup":"2026-03-13","td1":"2026-03-17","grad":"2026-06-05","soi":"2026-06-16"},{"co":"D","name":"Delta","op":88,"ship":"2026-03-17","pickup":"2026-03-20","td1":"2026-03-24","grad":"2026-06-12","soi":"2026-06-23"},{"co":"M","name":"Mike","op":77,"ship":"2026-03-24","pickup":"2026-03-28","td1":"2026-03-31","grad":"2026-06-18","soi":"2026-06-30"},{"co":"H","name":"Hotel","op":83,"ship":"2026-04-14","pickup":"2026-04-17","td1":"2026-04-21","grad":"2026-07-09","soi":"2026-07-21"},{"co":"N","name":"November","op":83,"ship":"2026-04-21","pickup":"2026-04-24","td1":"2026-04-28","grad":"2026-07-17","soi":"2026-07-28"},{"co":"A","name":"Alpha","op":76,"ship":"2026-04-28","pickup":"2026-05-01","td1":"2026-05-05","grad":"2026-07-24","soi":"2026-08-04"},{"co":"E","name":"Echo","op":69,"ship":"2026-05-05","pickup":"2026-05-08","td1":"2026-05-12","grad":"2026-07-31","soi":"2026-08-11"},{"co":"I","name":"India","op":63,"ship":"2026-05-12","pickup":"2026-05-16","td1":"2026-05-19","grad":"2026-08-07","soi":"2026-08-18"},{"co":"B","name":"Bravo","op":42,"ship":"2026-05-19","pickup":"2026-05-23","td1":"2026-05-26","grad":"2026-08-14","soi":"2026-08-25"},{"co":"F","name":"Fox","op":35,"ship":"2026-05-26","pickup":"2026-05-30","td1":"2026-06-02","grad":"2026-08-21","soi":"2026-09-01"},{"co":"K","name":"Kilo","op":35,"ship":"2026-06-02","pickup":"2026-06-06","td1":"2026-06-09","grad":"2026-08-28","soi":"2026-09-08"},{"co":"C","name":"Charlie","op":28,"ship":"2026-06-09","pickup":"2026-06-13","td1":"2026-06-16","grad":"2026-09-04","soi":"2026-09-15"},{"co":"G","name":"Golf","op":28,"ship":"2026-06-16","pickup":"2026-06-20","td1":"2026-06-23","grad":"2026-09-11","soi":"2026-09-22"},{"co":"L","name":"Lima","op":21,"ship":"2026-06-23","pickup":"2026-06-27","td1":"2026-06-30","grad":"2026-09-18","soi":"2026-09-29"},{"co":"D","name":"Delta","op":28,"ship":"2026-07-07","pickup":"2026-07-11","td1":"2026-07-14","grad":"2026-10-02","soi":"2026-10-13"},{"co":"M","name":"Mike","op":29,"ship":"2026-07-14","pickup":"2026-07-18","td1":"2026-07-21","grad":"2026-10-09","soi":"2026-10-20"},{"co":"H","name":"Hotel","op":22,"ship":"2026-07-21","pickup":"2026-07-25","td1":"2026-07-28","grad":"2026-10-16","soi":"2026-10-27"},{"co":"N","name":"November","op":14,"ship":"2026-07-28","pickup":"2026-08-01","td1":"2026-08-04","grad":"2026-10-23","soi":"2026-11-03"},{"co":"A","name":"Alpha","op":14,"ship":"2026-08-04","pickup":"2026-08-08","td1":"2026-08-11","grad":"2026-10-30","soi":"2026-11-10"},{"co":"E","name":"Echo","op":14,"ship":"2026-08-11","pickup":"2026-08-15","td1":"2026-08-18","grad":"2026-11-06","soi":"2026-11-17"},{"co":"I","name":"India","op":14,"ship":"2026-08-18","pickup":"2026-08-22","td1":"2026-08-25","grad":"2026-11-13","soi":"2026-11-24"},{"co":"B","name":"Bravo","op":14,"ship":"2026-08-25","pickup":"2026-08-29","td1":"2026-09-01","grad":"2026-11-20","soi":"2026-12-01"},{"co":"F","name":"Fox","op":14,"ship":"2026-09-01","pickup":"2026-09-05","td1":"2026-09-08","grad":"2026-11-25","soi":"2026-12-08"},{"co":"K","name":"Kilo","op":14,"ship":"2026-09-08","pickup":"2026-09-12","td1":"2026-09-15","grad":"2026-12-04","soi":"2027-01-12"},{"co":"C","name":"Charlie","op":14,"ship":"2026-09-15","pickup":"2026-09-19","td1":"2026-09-22","grad":"2026-12-11","soi":"2027-01-12"},{"co":"G","name":"Golf","op":34,"ship":"2026-10-13","pickup":"2026-10-16","td1":"2026-10-20","grad":"2027-01-08","soi":"2027-01-19"},{"co":"L","name":"Lima","op":41,"ship":"2026-10-27","pickup":"2026-10-30","td1":"2026-11-03","grad":"2027-01-22","soi":"2027-02-02"},{"co":"D","name":"Delta","op":34,"ship":"2026-11-03","pickup":"2026-11-06","td1":"2026-11-10","grad":"2027-01-29","soi":"2027-02-09"},{"co":"M","name":"Mike","op":41,"ship":"2026-11-17","pickup":"2026-11-20","td1":"2026-11-24","grad":"2027-02-12","soi":"2027-02-23"},{"co":"H","name":"Hotel","op":48,"ship":"2026-12-01","pickup":"2026-12-04","td1":"2026-12-08","grad":"2027-02-26","soi":"2027-03-09"},{"co":"N","name":"November","op":69,"ship":"2026-12-08","pickup":"2026-12-11","td1":"2026-12-15","grad":"2027-03-05","soi":"2027-03-16"}]}
+;
+
+/* ---------- flatten matrix into a day sequence ---------- */
+const SEQ=[];            /* row-major grid cells */
+SEQ.push({wk:"F",di:5,cell:DATA.forming[5],band:null});
+SEQ.push({wk:"F",di:6,cell:DATA.forming[6],band:null});
+DATA.weeks.forEach(w=>w[1].forEach((cl,i)=>{
+  /* phase bands cover Mon-Fri only; weekends are not part of the band */
+  if(cl) SEQ.push({wk:w[0],di:i,cell:cl,band:(i<5?(w[2]||null):null)});
+}));
+const IDX=new Map(); SEQ.forEach((s,i)=>IDX.set(s.cell,i));
+
+/* In a week carrying a partial-width band (Crucible), the cells NOT covered
+   by the grey bar should read as extending to the bottom of the row, so we
+   drop the shared edge between them and the blank filler beneath. */
+DATA.weeks.forEach(w=>{
+  const cells=w[1];
+  if(!cells.filter(Boolean).some(c=>c.span)) return;
+  cells.forEach(c=>{ if(c && !c.span) c.openBottom=true; });
+});
+
+const DAYMS=864e5;
+const P=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);};
+const fmt=d=>d.toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'2-digit'})
+             .toUpperCase().replace(/ /g,'-');
+const fmtS=d=>d.toLocaleDateString('en-US',{day:'2-digit',month:'short'}).toUpperCase();
+
+/* The Matrix grid is keyed to WEEKDAY, not to elapsed days.
+   F1 sits in the Forming row's Sat slot whatever its real weekday
+   (F1 is Fri for many companies, Sat for others). Week 1 begins on the
+   first Monday AFTER F1, and from there the grid runs one cell per
+   calendar day. Anchoring this way keeps every company in its true
+   weekday column. */
+/* DST-safe day arithmetic. Adding 86_400_000 ms across a daylight-saving
+   boundary does NOT advance one calendar day (1 Nov 2026 is the US rollback),
+   which silently shifted every date after it. setDate() is calendar-aware. */
+const addDays=(d,n)=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  x.setDate(x.getDate()+n); return x;};
+
+const CAL=new Map();     /* co.pickup -> {byIdx, byKey} */
+function calFor(co){
+  if(CAL.has(co.pickup)) return CAL.get(co.pickup);
+  const f1=P(co.pickup);
+  let s=(7-((f1.getDay()+6)%7))%7; if(s===0) s=7;   /* days F1 -> next Mon */
+  const wk1=addDays(f1,s);
+  const byIdx=[], byKey=new Map();
+  const put=(i,d)=>{byIdx[i]=d; byKey.set(key(d),i);};
+  put(0,f1);
+  put(1,addDays(wk1,-1));                            /* F2 = Sun before Wk1 */
+  for(let i=2;i<SEQ.length;i++) put(i,addDays(wk1,i-2));
+  const o={byIdx,byKey};
+  CAL.set(co.pickup,o); return o;
+}
+const key=d=>`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+const posOf=(co,when)=>{
+  const c=calFor(co); const i=c.byKey.get(key(when));
+  return (i===undefined)?null:i;
+};
+const dateOf=(co,i)=>calFor(co).byIdx[i]||null;
+const active=when=>DATA.cos.filter(c=>when>=P(c.ship)&&when<=P(c.grad));
+
+const DAYS=["MON","TUES","WED","THUR","FRI","SAT","SUN"];
+
+let ME="C", SHOWALL=true, VIEW=new Date(), MODE="all", AGX=false;
+VIEW.setHours(0,0,0,0);
+
+/* ---------- scope window (indices into SEQ) ---------- */
+function window_(){
+  if(MODE==="all") return null;                    /* no dimming */
+  const me=DATA.cos.filter(c=>c.co===ME)
+        .find(c=>VIEW>=P(c.ship)&&VIEW<=P(c.grad));
+  const i = me ? posOf(me,VIEW) : null;
+  if(i===null) return {a:-1,b:-1,cur:null};        /* co not in cycle */
+  if(MODE==="day")   return {a:i,b:i,cur:i};
+  if(MODE==="week"){                               /* the Matrix row it sits in */
+    const wk=SEQ[i].wk;
+    let a=i,b=i;
+    while(a>0 && SEQ[a-1].wk===wk) a--;
+    while(b<SEQ.length-1 && SEQ[b+1].wk===wk) b++;
+    return {a,b,cur:i};
+  }
+  /* month = current week +/- ~2 rows => 4 matrix weeks */
+  const wks=[...new Set(SEQ.map(s=>s.wk))];
+  const wi=wks.indexOf(SEQ[i].wk);
+  const lo=wks[Math.max(0,wi-1)], hi=wks[Math.min(wks.length-1,wi+2)];
+  let a=SEQ.findIndex(s=>s.wk===lo);
+  let b=SEQ.map(s=>s.wk).lastIndexOf(hi);
+  return {a,b,cur:i};
+}
+
+function evHtml(items,big,tmap,samLine){
+  tmap=tmap||{};
+  return items.map((t,ix)=>{
+    if(!t) return "";
+    const tc=tmap[String(ix)]
+      ?`<span class="${big?"tm":"mtm"}">${tmap[String(ix)]}</span>`:"";
+    const evSpan = t[0]==="*"
+      ? (()=>{const[x,c]=t.slice(1).split("|");
+          return `<span class="ev hl hl-${c}">${x}</span>`;})()
+      : `<span class="ev">${t}</span>`;
+    return samLine ? `<span class="evln">${evSpan}${tc}</span>` : `${evSpan}${tc}`;
+  }).join("");
+}
+const tagHtml=t=>{ if(!t)return""; const[x,c]=t.split("|");
+  return `<span class="tag hl-${c}">${x}</span>`; };
+
+/* ---------- render ---------- */
+function render(){
+  closeDPop();
+  document.getElementById('today').textContent="VIEW: "+
+    VIEW.toLocaleDateString('en-US',{weekday:'short',day:'2-digit',
+      month:'short',year:'numeric'}).toUpperCase();
+
+  const act=active(VIEW), at={};
+  act.forEach(c=>{const i=posOf(c,VIEW); if(i!==null)(at[i]=at[i]||[]).push(c);});
+  const W=window_();
+
+  renderRail(act);
+
+  const dayBox=document.getElementById('dayview');
+  const mx=document.getElementById('mx');
+  if(MODE==="day"){ mx.style.display="none"; dayBox.style.display="";
+                    renderDay(W,at,act); }
+  else { mx.style.display=""; dayBox.style.display="none";
+         renderGrid(W,at); }
+  renderMobile(W,at);
+}
+
+function renderGrid(W,at){
+  const out=i=>W&&(i<W.a||i>W.b);
+  let h="<colgroup><col class='wkc'>"+"<col>".repeat(7)+"</colgroup>";
+  h+="<tr><th class='hd'>WK</th>"+DAYS.map(d=>`<th class='hd'>${d}</th>`).join("")+"</tr>";
+
+  const f5=IDX.get(DATA.forming[5]), f6=IDX.get(DATA.forming[6]);
+  if(!(out(f5)&&out(f6))){
+    h+=`<tr><td class='wk'></td>`+
+       `<td class='cell blank' colspan='5' style='background:var(--grey);`+
+       `text-align:center;font-weight:700;font-style:italic;font-size:12.5px;`+
+       `vertical-align:middle;height:46px'>SHIPPING / RECEIVING</td>`;
+    [5,6].forEach(i=>h+=cellHtml(DATA.forming[i],at,W,"form"));
+    h+="</tr>";
+  }
+
+  DATA.weeks.forEach(w=>{
+    const [wk,cells,band]=w;
+    const ids=cells.filter(Boolean).map(c=>IDX.get(c));
+    if(ids.every(out)) return;                       /* hide whole row */
+    const hasSpan=cells.filter(Boolean).some(c=>c.span);
+    h+=`<tr><td class='wk' rowspan='${(band?1:0)+(hasSpan?1:0)+1}'>${wk}</td>`;
+    cells.forEach(cl=>h+=cellHtml(cl,at,W,""));
+    h+="</tr>";
+    if(band) h+=`<tr class='band'><td class='bt' colspan='5'>${band}</td>`+
+                 `<td class='bx'></td><td class='bx'></td></tr>`;
+    /* partial-width band (Crucible): sits under the days it covers */
+    const sp=cells.filter(Boolean).find(c=>c.span);
+    if(sp){
+      const ix=cells.map(c=>c&&c.span?1:0);
+      const a=ix.indexOf(1), b=ix.lastIndexOf(1);
+      const vis=cells.filter(Boolean).some(c=>c.span&&!(W&&(IDX.get(c)<W.a||IDX.get(c)>W.b)));
+      if(vis){
+        h+="<tr class='band'>";
+        for(let k=0;k<7;k++){
+          if(k<a||k>b) h+=`<td class='bx'></td>`;      /* per-column: keeps
+                                                          the vertical rules */
+          else if(k===a) h+=`<td class='bt' colspan='${b-a+1}'>${sp.span}</td>`;
+        }
+        h+="</tr>";
+      }
+    }
+  });
+  document.getElementById('mxb').innerHTML=h;
+  document.querySelectorAll('#mxb td.cell[data-i]').forEach(td=>{
+    td.onclick=()=>openDPop(+td.dataset.i);
+  });
+}
+
+function cellHtml(cl,at,W,extra){
+  if(!cl) return "<td class='cell blank'></td>";
+  const i=IDX.get(cl);
+  const here=at[i]||[];
+  const vis=SHOWALL?here:here.filter(c=>c.co===ME);
+  const inwin = W && i>=W.a && i<=W.b;
+  const isCur = W && i===W.cur;
+  if(W && !inwin) return "<td class='cell blank'></td>";   /* out of scope */
+  const cls=["cell",extra,cl.bg||"",inwin?"inwin":"",isCur?"here":"",
+             cl.openBottom?"nb":""].join(" ");
+
+  /* date label for the selected company */
+  let dstr="";
+  const me=DATA.cos.filter(c=>c.co===ME)
+        .find(c=>VIEW>=P(c.ship)&&VIEW<=P(c.grad));
+  if(me){ const d=dateOf(me,i); if(d) dstr=fmtS(d); }
+
+  return `<td class="${cls}" data-i="${i}">`+
+    `<span class="did">${cl.id}</span>`+
+    (dstr?`<span class="dat">${dstr}</span>`:"")+
+    tagHtml(cl.tag)+evHtml(cl.items,0,cl.tm,true)+
+    (vis.length?`<div class="pins">`+vis.map(c=>
+      `<span class="pin ${c.co===ME?"me":""}" title="${c.name}">${c.co}</span>`
+    ).join("")+`</div>`:"")+`</td>`;
+}
+
+function renderDay(W,at,act){
+  const box=document.getElementById('dayview');
+  if(!W||W.cur===null){
+    box.innerHTML=`<div class="day"><h2><span>${coName(ME)} not in cycle</span>`+
+      `<span class="sub">${fmt(VIEW)}</span></h2>`+
+      `<div class="dcol"><p style="font-size:13px">`+
+      `This company is on Outpost or has not yet picked up on the selected date. `+
+      `Switch companies, change the date, or use the All view.</p></div></div>`;
+    return;
+  }
+  const s=SEQ[W.cur], cl=s.cell;
+  const dow=DAYS[s.di]||"";
+  const onDay=at[W.cur]||[];
+  box.innerHTML=
+   `<div class="day">
+      <h2><span>${cl.id} &nbsp;·&nbsp; ${dow}</span>
+          <span class="sub">WEEK ${s.wk} &nbsp;|&nbsp; ${fmt(VIEW)}</span></h2>
+      <div class="daygrid">
+        <div class="dcol">
+          <h3>EVENTS</h3>
+          ${tagHtml(cl.tag)}
+          ${cl.items.length?evHtml(cl.items,1,cl.tm)
+            :"<span class='ev' style='color:#888;font-style:italic'>No scheduled events</span>"}
+        </div>
+        <div class="dcol">
+          <h3>REGIMENT ON THIS CELL</h3>
+          ${onDay.length?onDay.map(c=>
+            `<div class="dco ${c.co===ME?"me":""}">
+               <span class="dot">${c.co}</span>
+               <span class="t"><b>${c.name}</b> · grad ${fmt(P(c.grad))}</span>
+             </div>`).join("")
+            :"<span class='ev' style='color:#888;font-style:italic'>No other company here</span>"}
+          <h3 style="margin-top:10px">ALL COMPANIES TODAY</h3>
+          ${act.map(c=>{const i=posOf(c,VIEW);
+             return `<div class="dco ${c.co===ME?"me":""}">
+               <span class="dot">${c.co}</span>
+               <span class="t"><b>${i!==null?SEQ[i].cell.id:"Outpost"}</b> · ${c.name}</span>
+             </div>`;}).join("")}
+        </div>
+      </div>
+      ${s.band?`<div class="dbandbox">${s.band}</div>`:""}
+    </div>`;
+}
+
+const coName=co=>{const c=DATA.cos.find(x=>x.co===co);return c?c.name:co;};
+
+function renderRail(act){
+  const sorted=act.slice().sort((a,b)=>P(a.pickup)-P(b.pickup));
+  let h=`<h2>REGIMENT STATUS</h2>`;
+  if(!sorted.length) h+=`<div class="rl"><span class="info td">No companies in cycle</span></div>`;
+  sorted.forEach(c=>{
+    const i=posOf(c,VIEW);
+    const id=i!==null?SEQ[i].cell.id:"Outpost";
+    const ph=i!==null?(SEQ[i].band||wkLabel(i)):"";
+    const dtg=Math.round((P(c.grad)-VIEW)/DAYMS);
+    h+=`<div class="rl ${c.co===ME?"me":""}" data-co="${c.co}">
+          <span class="dot">${c.co}</span>
+          <span class="info">
+            <span class="nm">${c.name}</span>
+            <span class="td"><b>${id}</b></span>
+            ${ph?`<span class="ph">${ph}</span>`:""}
+            <span class="g">Grad ${fmt(P(c.grad))} · ${dtg>=0?dtg+"d":"—"}</span>
+          </span>
+        </div>`;
+  });
+  const r=document.getElementById('rail');
+  r.innerHTML=h;
+  r.querySelectorAll('.rl[data-co]').forEach(el=>{
+    el.onclick=()=>{ME=el.dataset.co;document.getElementById('me').value=ME;render();};
+  });
+}
+const wkLabel=i=>SEQ[i].wk==="F"?"Forming":"Week "+SEQ[i].wk;
+
+function renderMobile(W,at){
+  const box=document.getElementById('ml');
+  const me=DATA.cos.filter(c=>c.co===ME)
+        .find(c=>VIEW>=P(c.ship)&&VIEW<=P(c.grad));
+
+  if(W && W.a<0){
+    box.innerHTML=`<div class="agenda"><div class="agap">`+
+      `${coName(ME)} is not in cycle on this date.</div></div>`;
+    return;
+  }
+  const lo = W?W.a:0, hi = W?W.b:SEQ.length-1;
+
+  /* Agenda default: today through the next 7 days (All view only).
+     "Show all" expands to the full scoped range; "Show less" reverts. */
+  let aLo=lo, aHi=hi, canWin=false;
+  if(MODE==="all" && me){
+    const ti=posOf(me,VIEW);
+    if(ti!==null){
+      canWin=true;
+      if(!AGX){ aLo=Math.max(lo,ti); aHi=Math.min(hi,ti+7); }
+    }
+  }
+  const agxBtn = !canWin ? "" : AGX
+    ? `<span class="agbtns">`+
+        `<button class="agx" id="agtop">&uarr; Return to top</button>`+
+        `<button class="agx" id="agx">Show less</button>`+
+      `</span>`
+    : `<button class="agx" id="agx">Show all</button>`;
+
+  box.innerHTML =
+    `<div class="msec">Matrix <span style="font-weight:400;text-transform:none;`+
+    `letter-spacing:0;color:#9aa0a6">- tap a day for detail</span></div>`
+      + miniGrid(lo,hi,at,me) +
+    `<div class="agsec" id="agsec">`+
+      `<div class="msec agmsec"><span>Agenda</span>${agxBtn}</div>`+
+      agenda(aLo,aHi,at,me)+
+    `</div>`;
+
+  box.querySelectorAll('.mg td.c[data-i]').forEach(td=>{
+    td.onclick=()=>openSheet(+td.dataset.i);
+  });
+  const ax=document.getElementById('agx');
+  if(ax) ax.onclick=()=>{ AGX=!AGX; render(); };
+  const atop=document.getElementById('agtop');
+  if(atop) atop.onclick=()=>{
+    const el=document.getElementById('agsec');
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+}
+
+/* ---- mobile mini grid ---- */
+function miniGrid(lo,hi,at,me){
+  const SH=["MON","TUE","WED","THU","FRI","SAT","SUN"];
+  const out=i=>i<lo||i>hi;
+  let h=`<table class="mg"><colgroup><col class="wkc2">`+
+        `<col><col><col><col><col><col><col></colgroup>`+
+        `<tr><th class="wkc2"></th>`+SH.map(d=>`<th>${d}</th>`).join("")+`</tr>`;
+
+  const f5=IDX.get(DATA.forming[5]), f6=IDX.get(DATA.forming[6]);
+  if(!(out(f5)&&out(f6))){
+    h+=`<tr><td class="w"></td>`+
+       `<td class="c blank" colspan="5" style="background:var(--grey);`+
+       `text-align:center;font-weight:700;font-style:italic;font-size:8px;`+
+       `vertical-align:middle;height:20px">SHIPPING / RECEIVING</td>`;
+    [5,6].forEach(i=>h+=mCell(DATA.forming[i],at,me,lo,hi,"form"));
+    h+=`</tr>`;
+  }
+
+  DATA.weeks.forEach(w=>{
+    const [wk,cells,band]=w;
+    const ids=cells.filter(Boolean).map(c=>IDX.get(c));
+    if(ids.every(out)) return;
+    const hasSpanM=cells.filter(Boolean).some(c=>c.span);
+    h+=`<tr><td class="w" rowspan="${(band?1:0)+(hasSpanM?1:0)+1}">${wk}</td>`;
+    cells.forEach(cl=>h+=mCell(cl,at,me,lo,hi,""));
+    h+=`</tr>`;
+    if(band) h+=`<tr class="bnd"><td class="bt" colspan="5">${band}</td>`+
+                `<td class="bx"></td><td class="bx"></td></tr>`;
+    const sp=cells.filter(Boolean).find(c=>c.span);
+    if(sp){
+      const ix=cells.map(c=>c&&c.span?1:0);
+      const a=ix.indexOf(1), b=ix.lastIndexOf(1);
+      const vis=cells.filter(Boolean).some(c=>c.span&&!(IDX.get(c)<lo||IDX.get(c)>hi));
+      if(vis){
+        h+=`<tr class="bnd">`;
+        for(let k=0;k<7;k++){
+          if(k<a||k>b) h+=`<td class="bx"></td>`;
+          else if(k===a) h+=`<td class="bt" colspan="${b-a+1}">${sp.span}</td>`;
+        }
+        h+=`</tr>`;
+      }
+    }
+  });
+  return h+`</table>`;
+}
+
+function mCell(cl,at,me,lo,hi,extra){
+  if(!cl) return `<td class="c blank"></td>`;
+  const i=IDX.get(cl);
+  if(i<lo||i>hi) return `<td class="c blank"></td>`;
+  const here=at[i]||[];
+  const vis=SHOWALL?here:here.filter(c=>c.co===ME);
+  const cur=me && key(dateOf(me,i)||new Date(0))===key(VIEW);
+  const d=me?dateOf(me,i):null;
+
+  /* micro event text - keep it visible, truncate rather than overflow */
+  const evs=cl.items.filter(Boolean);
+  const CAP = vis.length ? 3 : 4;      /* leave room for the puck strip */
+  const shown=evs.slice(0,CAP).map(t=>{
+    if(t[0]==="*"){const[x,c]=t.slice(1).split("|");
+      return `<span class="mev h hl-${c}">${x}</span>`;}
+    return `<span class="mev">${t}</span>`;}).join("");
+  const extraN=evs.length-CAP;
+
+  return `<td class="c ${extra} ${cl.bg||""} ${cur?"here":""} ${cl.openBottom?"nb":""}" data-i="${i}">`+
+    `<span class="id">${cl.id}</span>`+
+    (d?`<span class="dt">${d.getDate()}</span>`:"")+
+    (cl.tag?`<span class="mev h hl-${cl.tag.split("|")[1]}">${cl.tag.split("|")[0]}</span>`:"")+
+    shown+
+    (extraN>0?`<span class="more">+${extraN} more</span>`:"")+
+    (vis.length?`<div class="dots">`+vis.map(c=>
+      `<span class="pk ${c.co===ME?"me":""}">${c.co}</span>`).join("")+`</div>`:"")+
+    `</td>`;
+}
+
+/* ---- tap sheet ---- */
+function openSheet(i){
+  const s=SEQ[i], cl=s.cell;
+  const me=DATA.cos.filter(c=>c.co===ME)
+        .find(c=>VIEW>=P(c.ship)&&VIEW<=P(c.grad));
+  const d=me?dateOf(me,i):null;
+  const WDF=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+  /* who is on this cell today */
+  const act=active(VIEW);
+  const on=act.filter(c=>posOf(c,VIEW)===i);
+
+  const tmap=cl.tm||{};
+  let lis="", anyEv=false;
+  cl.items.forEach((t,ix)=>{
+    if(!t) return; anyEv=true;
+    const tc=tmap[String(ix)]?`<span class="tm">${tmap[String(ix)]}</span>`:"";
+    if(t[0]==="*"){const[x,c]=t.slice(1).split("|");
+      lis+=`<li class="hl"><span class="hl-${c}">${x}</span>${tc}</li>`;}
+    else lis+=`<li>${t}${tc}</li>`;
+  });
+  if(!anyEv) lis=`<li class="none">No scheduled events</li>`;
+
+  document.getElementById('sheetBody').innerHTML=
+    `<h4>Events</h4><ul class="evl">${lis}</ul>`+
+    ((s.band||cl.span)?`<span class="bandpill">${s.band||cl.span}`+
+      (cl.span&&tmap.span?` ${tmap.span}`:"")+`</span>`:"")+
+    (on.length?`<div class="cos"><h4>On this cell</h4>`+on.map(c=>
+       `<div class="dco ${c.co===ME?"me":""}"><span class="dot">${c.co}</span>`+
+       `<span class="t"><b>${c.name}</b> · grad ${fmt(P(c.grad))}</span></div>`
+     ).join("")+`</div>`:"");
+
+  document.getElementById('sheetHead').innerHTML=
+    `<div class="r1"><span class="tid">${cl.id}</span>`+
+    (d?`<span class="dd">${WDF[d.getDay()]}, ${fmt(d)}</span>`:"")+
+    `</div><span class="wl">${s.wk==="F"?"Forming":"Week "+s.wk}`+
+    (cl.tag&&tmap.tag?` &nbsp;·&nbsp; ${cl.tag.split("|")[0]} ${tmap.tag}`:"")+`</span>`;
+
+  document.getElementById('veil').classList.add('on');
+  document.getElementById('sheet').classList.add('on');
+}
+function closeSheet(){
+  document.getElementById('veil').classList.remove('on');
+  document.getElementById('sheet').classList.remove('on');
+}
+
+/* ---- desktop popup: 7-day agenda starting on the clicked day,
+   with an in-popup Show all / Show less + Return to top ---- */
+let DPOP_ANCHOR=null, DPOP_EXPANDED=false;
+
+function openDPop(i){
+  DPOP_ANCHOR=i; DPOP_EXPANDED=false;
+  renderDPopContent();
+  document.getElementById('dveil').classList.add('on');
+  document.getElementById('dpop').classList.add('on');
+}
+function closeDPop(){
+  document.getElementById('dveil').classList.remove('on');
+  document.getElementById('dpop').classList.remove('on');
+}
+
+function renderDPopContent(){
+  if(DPOP_ANCHOR===null) return;
+  const i=DPOP_ANCHOR;
+  const me=DATA.cos.filter(c=>c.co===ME)
+        .find(c=>VIEW>=P(c.ship)&&VIEW<=P(c.grad));
+  const body=document.getElementById('dpopBody');
+
+  if(!me){
+    document.getElementById('dpopTitle').textContent=coName(ME);
+    document.getElementById('dpopSub').textContent="Not in cycle on this date";
+    body.innerHTML=`<div class="agap">Switch companies or change the `+
+      `date to see this company's schedule.</div>`;
+    document.getElementById('dpopBtns').innerHTML="";
+    return;
+  }
+
+  const d=dateOf(me,i);
+  const WDF=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const s=SEQ[i];
+  document.getElementById('dpopTitle').textContent=
+    d?`${WDF[d.getDay()]}, ${fmt(d)}`:s.cell.id;
+  document.getElementById('dpopSub').textContent=
+    `${s.cell.id} · ${s.wk==="F"?"Forming":"Week "+s.wk}`;
+
+  const lo=i, hi = DPOP_EXPANDED ? SEQ.length-1 : Math.min(SEQ.length-1,i+7);
+  const act=active(VIEW), at={};
+  act.forEach(c=>{const p=posOf(c,VIEW); if(p!==null)(at[p]=at[p]||[]).push(c);});
+  body.innerHTML=agenda(lo,hi,at,me);
+  body.scrollTop=0;
+
+  renderDPopBtns();
+}
+
+function renderDPopBtns(){
+  const box=document.getElementById('dpopBtns');
+  if(!box) return;
+  box.innerHTML = DPOP_EXPANDED
+    ? `<button class="dptop" id="dpopTop">&uarr; Return to top</button>`+
+      `<button class="dptop" id="dpopShow">Show less</button>`
+    : `<button class="dptop" id="dpopShow">Show all</button>`;
+  const t=document.getElementById('dpopTop');
+  if(t) t.onclick=()=>{
+    const b=document.getElementById('dpopBody');
+    if(b) b.scrollTo({top:0,behavior:'smooth'});
+  };
+  const sh=document.getElementById('dpopShow');
+  if(sh) sh.onclick=()=>{ DPOP_EXPANDED=!DPOP_EXPANDED; renderDPopContent(); };
+}
+
+/* ---- mobile agenda ---- */
+function agenda(lo,hi,at,me){
+  const MON=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY",
+             "AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+  const WD=["SUN","MON","TUE","WED","THU","FRI","SAT"];
+  const tk=key(VIEW);
+  let h='<div class="agenda">', curMon=null, lastBand=null;
+
+  for(let i=lo;i<=hi;i++){
+    const s=SEQ[i], cl=s.cell;
+    const d=me?dateOf(me,i):null;
+
+    if(d){ const mk=d.getFullYear()+"-"+d.getMonth();
+      if(mk!==curMon){ curMon=mk;
+        h+=`<div class="mo">${MON[d.getMonth()]} ${d.getFullYear()}</div>`; } }
+
+    const bnd = s.band || (cl.span||null);
+    if(bnd && bnd!==lastBand){
+      const bt = cl.span && cl.tm && cl.tm.span ? ` <span class="btm">${cl.tm.span}</span>` : "";
+      h+=`<div class="aband">${bnd}${bt}</div>`;
+    }
+    lastBand=bnd;
+
+    const here=at[i]||[];
+    const vis=SHOWALL?here:here.filter(c=>c.co===ME);
+    const isToday=d && key(d)===tk;
+    const isSun=d?d.getDay()===0:(s.di===6);
+    const tmap=cl.tm||{};
+    let lis="", anyEv=false;
+    cl.items.forEach((t,ix)=>{
+      if(!t) return; anyEv=true;
+      const tc=tmap[String(ix)]?`<span class="tm">${tmap[String(ix)]}</span>`:"";
+      if(t[0]==="*"){const[x,c]=t.slice(1).split("|");
+        lis+=`<li class="hl"><span class="hl-${c}">${x}</span>${tc}</li>`;}
+      else lis+=`<li>${t}${tc}</li>`;
+    });
+    if(!anyEv) lis=`<li class="none">No scheduled events</li>`;
+
+    h+=`<div class="ad ${isToday?"today":""} ${isSun?"sun":""}">
+          <div class="dbox">
+            <div class="dw">${d?WD[d.getDay()]:(DAYS[s.di]||"").slice(0,3)}</div>
+            <div class="dn">${d?d.getDate():"·"}</div>
+          </div>
+          <div class="body">
+            <div class="hdr">
+              <span class="tid">${cl.id}</span>
+              <span class="wkl">${s.wk==="F"?"Forming":"Week "+s.wk}</span>
+              ${cl.tag?tagHtml(cl.tag):""}
+              ${cl.tag&&tmap.tag?`<span class="tm">${tmap.tag}</span>`:""}
+              ${vis.map(c=>`<span class="chip ${c.co===ME?"me":""}">`+
+                  `<i>${c.co}</i>${c.name}</span>`).join("")}
+            </div>
+            <ul class="evl">${lis}</ul>
+          </div>
+        </div>`;
+  }
+  return h+"</div>";
+}
+
+/* ---------- controls ---------- */
+const sel=document.getElementById('me');
+[...new Set(DATA.cos.map(c=>c.co))].sort().forEach(co=>{
+  const o=document.createElement('option');
+  o.value=co;o.textContent=`${co} - ${coName(co)}`;
+  if(co===ME)o.selected=true;sel.appendChild(o);
+});
+sel.onchange=e=>{ME=e.target.value;render();};
+
+document.getElementById('seg').onclick=e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  MODE=b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  render();
+};
+
+const bA=document.getElementById('btnAll');
+bA.onclick=()=>{SHOWALL=!SHOWALL;bA.classList.toggle('on',SHOWALL);
+  bA.textContent=SHOWALL?"All companies":"My company only";render();};
+
+const dt=document.getElementById('dt');
+const syncDt=()=>{dt.value=
+  `${VIEW.getFullYear()}-${String(VIEW.getMonth()+1).padStart(2,'0')}-${String(VIEW.getDate()).padStart(2,'0')}`;};
+dt.onchange=e=>{if(!e.target.value)return;
+  const[y,m,d]=e.target.value.split('-').map(Number);
+  VIEW=new Date(y,m-1,d);VIEW.setHours(0,0,0,0);render();};
+document.getElementById('btnNow').onclick=()=>{
+  VIEW=new Date();VIEW.setHours(0,0,0,0);syncDt();render();};
+
+document.getElementById('veil').onclick=closeSheet;
+document.getElementById('sheetX').onclick=closeSheet;
+document.getElementById('dveil').onclick=closeDPop;
+document.getElementById('dpopX').onclick=closeDPop;
+document.addEventListener('keydown',e=>{
+  if(e.key==="Escape"){ closeSheet(); closeDPop(); }
+});
+
+syncDt();render();
+</script>
+</body>
+</html>
